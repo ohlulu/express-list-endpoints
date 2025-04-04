@@ -10,6 +10,16 @@
  * @property {string[]} middlewares Mounted middlewares
  */
 
+/**
+ * @typedef {Object} Options
+ * @property {boolean} includeMiddlewareRoutes Whether to include middleware routes in the results
+ */
+
+// Default global options
+const DEFAULT_OPTIONS = {
+  includeMiddlewareRoutes: true
+}
+
 const regExpToParseExpressPathRegExp = /^\/\^\\?\/?(?:(:?[\w\\.-]*(?:\\\/:?[\w\\.-]*)*)|(\(\?:\\?\/?\([^)]+\)\)))\\\/.*/
 const regExpToReplaceExpressPathRegExpParams = /\(\?:\\?\/?\([^)]+\)\)/
 const regexpExpressParamRegexp = /\(\?:\\?\\?\/?\([^)]+\)\)/g
@@ -20,6 +30,11 @@ const STACK_ITEM_VALID_NAMES = [
   'router',
   'bound dispatch',
   'mounted_app'
+]
+
+const STACK_ITEM_VALID_NAMES_INCLUDING_MIDDLEWARE_ROUTES = [
+  '<anonymous>',
+  ...STACK_ITEM_VALID_NAMES
 ]
 
 /**
@@ -132,9 +147,10 @@ const parseExpressPath = function (expressPathRegExp, params) {
  * @param {import('express').Express | import('express').Router | any} app
  * @param {string} [basePath]
  * @param {Endpoint[]} [endpoints]
+ * @param {Options} [options]
  * @returns {Endpoint[]}
  */
-const parseEndpoints = function (app, basePath, endpoints) {
+const parseEndpoints = function (app, basePath, endpoints, options) {
   const stack = app.stack || (app._router && app._router.stack)
 
   endpoints = endpoints || []
@@ -149,7 +165,7 @@ const parseEndpoints = function (app, basePath, endpoints) {
       }])
     }
   } else {
-    endpoints = parseStack(stack, basePath, endpoints)
+    endpoints = parseStack(stack, basePath, endpoints, options)
   }
 
   return endpoints
@@ -188,15 +204,18 @@ const addEndpoints = function (currentEndpoints, endpointsToAdd) {
  * @param {any[]} stack
  * @param {string} basePath
  * @param {Endpoint[]} endpoints
+ * @param {Options} [options]
  * @returns {Endpoint[]}
  */
-const parseStack = function (stack, basePath, endpoints) {
+const parseStack = function (stack, basePath, endpoints, options) {
+  // Use provided options or fall back to global options
+  const VALID_NAMES = options.includeMiddlewareRoutes ? STACK_ITEM_VALID_NAMES_INCLUDING_MIDDLEWARE_ROUTES : STACK_ITEM_VALID_NAMES
   stack.forEach((stackItem) => {
     if (stackItem.route) {
       const newEndpoints = parseExpressRoute(stackItem.route, basePath)
 
       endpoints = addEndpoints(endpoints, newEndpoints)
-    } else if (STACK_ITEM_VALID_NAMES.includes(stackItem.name)) {
+    } else if (VALID_NAMES.includes(stackItem.name)) {
       const isExpressPathRegexp = regExpToParseExpressPathRegExp.test(stackItem.regexp)
 
       let newBasePath = basePath
@@ -211,7 +230,7 @@ const parseStack = function (stack, basePath, endpoints) {
         newBasePath += `/${regExpPath}`
       }
 
-      endpoints = parseEndpoints(stackItem.handle, newBasePath, endpoints)
+      endpoints = parseEndpoints(stackItem.handle, newBasePath, endpoints, options)
     }
   })
 
@@ -221,10 +240,13 @@ const parseStack = function (stack, basePath, endpoints) {
 /**
  * Returns an array of strings with all the detected endpoints
  * @param {import('express').Express | import('express').Router | any} app The express/router instance to get the endpoints from
+ * @param {Options} [options] Optional settings that override global options
  * @returns {Endpoint[]}
  */
-const expressListEndpoints = function (app) {
-  const endpoints = parseEndpoints(app)
+const expressListEndpoints = function (app, options) {
+  // Merge provided options with global options
+  const mergedOptions = { ...DEFAULT_OPTIONS, ...(options || {}) }
+  const endpoints = parseEndpoints(app, '', [], mergedOptions)
 
   return endpoints
 }

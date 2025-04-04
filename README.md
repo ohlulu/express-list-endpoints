@@ -1,6 +1,9 @@
 # Express List Endpoints
 
 > [!IMPORTANT]
+> since original package is not maintained, I forked it and made some changes to it.
+
+> [!IMPORTANT]
 > This package only works for express 4.\* versions. It's not compatible with express 5 yet.
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/AlbertoFdzM/express-list-endpoints/ci.yml?branch=main&logo=github)](https://github.com/AlbertoFdzM/express-list-endpoints/actions/workflows/ci.yml?query=branch%3Amain) [![Codecov Coverage Report](https://img.shields.io/codecov/c/github/AlbertoFdzM/express-list-endpoints/main)](https://codecov.io/github/AlbertoFdzM/express-list-endpoints?branch=main) [![Code Climate Maintainability Report](https://img.shields.io/codeclimate/maintainability/AlbertoFdzM/express-list-endpoints)](https://codeclimate.com/github/AlbertoFdzM/express-list-endpoints/maintainability) [![NPM Downloads](https://img.shields.io/npm/dm/express-list-endpoints)
